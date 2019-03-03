@@ -11,32 +11,22 @@ import UIKit
 class TodoListViewController: UITableViewController {
 
     var itemArray = [ToDoItem]()
-    
-    let defaults = UserDefaults.standard
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("ToDoItems.plist")
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let newItem = ToDoItem()
-        newItem.name = "Do CS homework"
-        itemArray.append(newItem)
-        
-        let newItem2 = ToDoItem()
-        newItem2.name = "Read CS 161 notes"
-        itemArray.append(newItem2)
-        
-        let newItem3 = ToDoItem()
-        newItem3.name = "Do CS 178 project"
-        itemArray.append(newItem3)
-        
-        let newItem4 = ToDoItem()
-        newItem4.name = "Do LJ20 homework"
-        itemArray.append(newItem4)
         
         
-        if let items = defaults.array(forKey: "TodoListArray") as? [ToDoItem]{
-            itemArray = items
-        }
+        print(dataFilePath)
+        
+        
+        loadItems()
+        
+        
+//        if let items = defaults.array(forKey: "TodoListArray") as? [ToDoItem]{
+//            itemArray = items
+//        }
         
         
         // Do any additional setup after loading the view, typically from a nib.
@@ -51,7 +41,6 @@ class TodoListViewController: UITableViewController {
         let item = itemArray[indexPath.row]
         
         cell.textLabel?.text = item.name
-        print(cell.textLabel?.text)
         
         cell.accessoryType =  item.done == true ? .checkmark : .none
         
@@ -60,7 +49,6 @@ class TodoListViewController: UITableViewController {
     
     //TODO: Declare numberOfRowsInSection here:
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        print(itemArray.count)
         return itemArray.count
     }
     
@@ -70,6 +58,8 @@ class TodoListViewController: UITableViewController {
         //print(itemArray[indexPath.row])
         
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done //Flip the bool value "done"
+        
+        self.saveItems()
         
         tableView.reloadData() //Call the datasource methods again
         
@@ -103,7 +93,11 @@ class TodoListViewController: UITableViewController {
                 newItem.name = itemTextField.text!
                 
                 self.itemArray.append(newItem)
-                self.defaults.set(self.itemArray, forKey: "TodoListArray")
+                
+                self.saveItems()
+                
+                 
+                
             }
             self.tableView.reloadData()
         }
@@ -118,6 +112,30 @@ class TodoListViewController: UITableViewController {
         
         present(alert, animated: true, completion: nil)
         
+    }
+    
+    //MARK - Model Manipulation Methods
+    
+    func saveItems(){
+        let encoder = PropertyListEncoder()
+        do{
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+        
+        } catch {
+            print("Error encoding item array: \(error)")
+        }
+    }
+    
+    func loadItems(){
+        if let data = try? Data(contentsOf: dataFilePath!){
+            let decoder = PropertyListDecoder()
+            do {
+                itemArray = try decoder.decode([ToDoItem].self, from: data)
+            } catch {
+                print("error decoding the data")
+            }
+        }
     }
     
 
